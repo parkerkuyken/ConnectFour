@@ -25,7 +25,7 @@ stateDiagram-v2
     PLAYER_TURN --> EVALUATE_MOVE 
     PLAYER_TURN --> GAME_OVER : DISCONNECT or EOF or connection error - FORFEIT
 
-    EVALUATE_MOVE --> PLAYER_TURN : no win and board not full - STATE_UPDATE and swap active player
+    EVALUATE_MOVE --> PLAYER_TURN 
     EVALUATE_MOVE --> GAME_OVER : four in a row - WIN
     EVALUATE_MOVE --> GAME_OVER : board full - DRAW
 

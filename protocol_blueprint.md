@@ -119,7 +119,7 @@ I use the same basic envelope for every message. The actual information changes 
 |---|---|---|
 | `msg_type` | string | One of the 8 types in Section 4 (upper-case) |
 | `player_id` | string | Client alias (1-16 chars, `[A-Za-z0-9_]`), or `"SERVER"` for server messages |
-| `payload` | object | Type-specific body, `{}` if empty |
+| `payload` | object | Type specific body, `{}` if empty |
 | `timestamp` | integer | Unix epoch seconds |
 
 The server also checks that a client's `player_id` is the same name it used when it connected. If it changes, the server returns `INVALID_FIELD`.

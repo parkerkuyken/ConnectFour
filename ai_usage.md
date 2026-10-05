@@ -64,7 +64,7 @@ identify any cases I have missed.
 * [ ] Every JSON key and error code in the code appears in the blueprint
 * [ ] The receive loop has an EOF check and the required exception handlers
 * [ ] No state or transition exists in the code that is not in the diagram
-* [ ] Invalid and out-of-turn moves return `ERROR` and leave board and `active` unchanged
+* [ ] Invalid and out of-turn moves return `ERROR` and leave board and `active` unchanged
 * [ ] Wire samples from the blueprint parse and produce the documented replies
 
 ## 6. Prompt Log (design phase)

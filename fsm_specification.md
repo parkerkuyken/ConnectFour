@@ -10,7 +10,7 @@ The way I think about the lifecycle: it works like a Rocket League match. Player
 
 ```mermaid
 stateDiagram-v2
-    [*] --> INIT : server process starts
+    [*] --> INIT : server proces starts
 
     INIT --> WAITING_FOR_PLAYERS : listening socket bound
 

@@ -22,7 +22,7 @@ stateDiagram-v2
     GAME_START --> PLAYER_TURN : send GAME_START to both - PLAYER_1 is active
 
     PLAYER_TURN --> PLAYER_TURN : out-of-turn or malformed or invalid MOVE - send ERROR
-    PLAYER_TURN --> EVALUATE_MOVE : valid MOVE from active player
+    PLAYER_TURN --> EVALUATE_MOVE 
     PLAYER_TURN --> GAME_OVER : DISCONNECT or EOF or connection error - FORFEIT
 
     EVALUATE_MOVE --> PLAYER_TURN : no win and board not full - STATE_UPDATE and swap active player

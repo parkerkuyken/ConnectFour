@@ -114,8 +114,6 @@ sequenceDiagram
     CX->>HX: MOVE (col 3)
     HX->>GS: apply_move(PLAYER_1, 3)
 
-    rect rgb(235, 242, 255)
-        Note over GS: critical section begins
         alt Invalid move
             GS-->>CX: ERROR (NOT_IN_GAME, OUT_OF_TURN, COLUMN_OUT_OF_RANGE, or COLUMN_FULL)
         else Valid move
@@ -130,8 +128,7 @@ sequenceDiagram
                 GS-->>CO: GAME_OVER (WIN or DRAW, scores)
             end
         end
-        Note over GS: critical section ends
-    end
+       
 
     opt Player disconnects mid-game
         CO->>HO: DISCONNECT

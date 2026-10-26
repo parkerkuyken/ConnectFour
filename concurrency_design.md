@@ -33,7 +33,7 @@ These fields are read or written only while holding `GameState.lock`:
 
 Each socket is touched only by its own handler thread, so socket reads never take the lock. The lock is never held during `recv()`, so one slow client can't block the other.
 
-Each move is one critical section. Validation, board update, `seq` increment, and broadcast all happen under the lock, so both clients receive the same updates in the same order.
+Each move is one critical section. Validation, board update, `seq` increment, and broadcast all happen under this lock, so both clients receive the same updates in the same order.
 
 ```python
 def apply_move(self, symbol, row, col):
@@ -56,9 +56,8 @@ def apply_move(self, symbol, row, col):
             self._reset_board()
 ```
 
-**Known limitation:** `sendall()` under the lock could stall if a client stops reading and its buffer fills. Messages are under 200 bytes, so I'm accepting that risk for now.
 
-## 4. Turn Enforcement and Scoring
+## 4. Turn Enforcement / Scoring
 
 Validation runs under the lock, in this order:
 

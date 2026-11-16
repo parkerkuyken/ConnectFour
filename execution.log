@@ -1,0 +1,437 @@
+# Sprint 3 Execution Log
+
+I ran the server and two clients in three terminals on localhost. Below is what each terminal printed.
+
+What happens in this run:
+
+- Both clients connect at the same time, each on its own handler thread (`Handler-1` and `Handler-2` in the server log).
+- Client 2 tries the name PowderDay, which is taken, and picks BassDrop instead.
+- BassDrop tries to move first and gets `OUT_OF_TURN`. Later PowderDay tries column 9 and gets `COLUMN_OUT_OF_RANGE`. Neither changes the board.
+- 7 moves are played and PowderDay wins with four in a row in column 3. Both players get `GAME_OVER` with the score.
+- Round 2 starts on its own. After one move BassDrop types `q`, so PowderDay wins by forfeit and goes back to the lobby.
+- The server prints each FSM transition number (T1-T16) and shuts down with Ctrl+C at the end.
+
+## Server
+
+```text
+$ python3 server.py -p 8080
+04:56:56 [MainThread] T1  [*] -> INIT
+04:56:56 [MainThread] T2  INIT -> WAITING_FOR_PLAYERS, listening on 0.0.0.0:8080
+04:56:56 [Handler-1 ] Connection from 127.0.0.1:49116
+04:56:56 [Handler-1 ] RECV 127.0.0.1:49116  CONNECT 
+04:56:56 [Handler-1 ] Registered PowderDay as PLAYER_1 (R)
+04:56:56 [Handler-1 ] T3  WAITING_FOR_PLAYERS, 1 player waiting
+04:56:57 [Handler-2 ] Connection from 127.0.0.1:49132
+04:56:57 [Handler-2 ] RECV 127.0.0.1:49132  CONNECT 
+04:56:57 [Handler-2 ] T4  127.0.0.1:49132 tried taken name 'PowderDay'
+04:56:58 [Handler-2 ] RECV 127.0.0.1:49132  CONNECT 
+04:56:58 [Handler-2 ] Registered BassDrop as PLAYER_2 (Y)
+04:56:58 [Handler-2 ] T6  WAITING_FOR_PLAYERS -> GAME_START
+04:56:58 [Handler-2 ] T7  GAME_START -> PLAYER_TURN, round 1: PowderDay vs BassDrop
+04:56:58 [Handler-2 ] RECV BassDrop         MOVE {'col': 4}
+04:56:58 [Handler-2 ] T8  rejected BassDrop's move: OUT_OF_TURN
+04:56:59 [Handler-1 ] RECV PowderDay        MOVE {'col': 3}
+04:56:59 [Handler-1 ] T9  PowderDay (PLAYER_1) col 3 -> row 5, move 1
+04:56:59 [Handler-1 ] T11 EVALUATE_MOVE -> PLAYER_TURN, PLAYER_2's turn
+04:57:00 [Handler-2 ] RECV BassDrop         MOVE {'col': 4}
+04:57:00 [Handler-2 ] T9  BassDrop (PLAYER_2) col 4 -> row 5, move 2
+04:57:00 [Handler-2 ] T11 EVALUATE_MOVE -> PLAYER_TURN, PLAYER_1's turn
+04:57:00 [Handler-1 ] RECV PowderDay        MOVE {'col': 3}
+04:57:00 [Handler-1 ] T9  PowderDay (PLAYER_1) col 3 -> row 4, move 3
+04:57:00 [Handler-1 ] T11 EVALUATE_MOVE -> PLAYER_TURN, PLAYER_2's turn
+04:57:01 [Handler-2 ] RECV BassDrop         MOVE {'col': 4}
+04:57:01 [Handler-2 ] T9  BassDrop (PLAYER_2) col 4 -> row 4, move 4
+04:57:01 [Handler-2 ] T11 EVALUATE_MOVE -> PLAYER_TURN, PLAYER_1's turn
+04:57:01 [Handler-1 ] RECV PowderDay        MOVE {'col': 9}
+04:57:01 [Handler-1 ] T8  rejected PowderDay's move: COLUMN_OUT_OF_RANGE
+04:57:02 [Handler-1 ] RECV PowderDay        MOVE {'col': 3}
+04:57:02 [Handler-1 ] T9  PowderDay (PLAYER_1) col 3 -> row 3, move 5
+04:57:02 [Handler-1 ] T11 EVALUATE_MOVE -> PLAYER_TURN, PLAYER_2's turn
+04:57:03 [Handler-2 ] RECV BassDrop         MOVE {'col': 5}
+04:57:03 [Handler-2 ] T9  BassDrop (PLAYER_2) col 5 -> row 5, move 6
+04:57:03 [Handler-2 ] T11 EVALUATE_MOVE -> PLAYER_TURN, PLAYER_1's turn
+04:57:03 [Handler-1 ] RECV PowderDay        MOVE {'col': 3}
+04:57:03 [Handler-1 ] T9  PowderDay (PLAYER_1) col 3 -> row 2, move 7
+04:57:03 [Handler-1 ] T12 EVALUATE_MOVE -> GAME_OVER, PLAYER_1 wins
+04:57:03 [Handler-1 ] T14 GAME_OVER -> CLEANUP, scores {'PLAYER_1': 1, 'PLAYER_2': 0}
+04:57:03 [Handler-1 ] T15 CLEANUP -> WAITING_FOR_PLAYERS
+04:57:03 [Handler-1 ] T6  WAITING_FOR_PLAYERS -> GAME_START (rematch)
+04:57:03 [Handler-1 ] T7  GAME_START -> PLAYER_TURN, round 2: PowderDay vs BassDrop
+04:57:05 [Handler-1 ] RECV PowderDay        MOVE {'col': 2}
+04:57:05 [Handler-1 ] T9  PowderDay (PLAYER_1) col 2 -> row 5, move 1
+04:57:05 [Handler-1 ] T11 EVALUATE_MOVE -> PLAYER_TURN, PLAYER_2's turn
+04:57:05 [Handler-2 ] RECV BassDrop         DISCONNECT 
+04:57:05 [Handler-2 ] T10 PLAYER_TURN -> GAME_OVER, BassDrop left (OPPONENT_QUIT)
+04:57:05 [Handler-2 ] T14 GAME_OVER -> CLEANUP
+04:57:05 [Handler-2 ] T15 CLEANUP -> WAITING_FOR_PLAYERS, PowderDay back in the lobby
+04:57:05 [Handler-2 ] Closed connection to BassDrop
+04:57:06 [Handler-1 ] RECV PowderDay        DISCONNECT 
+04:57:06 [Handler-1 ] T5  PowderDay left the lobby (OPPONENT_QUIT)
+04:57:06 [Handler-1 ] Closed connection to PowderDay
+^C04:57:07 [MainThread] T16 CLEANUP -> [*], shutting down
+```
+
+## Client 1 (PowderDay)
+
+```text
+$ python3 client.py -i localhost -p 8080 -n PowderDay
+Resolved localhost -> 127.0.0.1
+Connected to 127.0.0.1:8080
+
+Connected as PowderDay. Waiting for opponent to drop in...
+Waiting for Player 2... (type q to quit)
+
+========================================
+  ROUND 1: PowderDay vs BassDrop
+  You are PLAYER_1 (R). PLAYER_1 goes first.
+========================================
+    0 1 2 3 4 5 6
+  +---------------+
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  +---------------+
+>>> Your Turn! Choose a column (0-6), or q to quit: 3
+
+Move 1: You dropped R in column 3.
+    0 1 2 3 4 5 6
+  +---------------+
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . R . . . |
+  +---------------+
+Waiting for Player 2 (BassDrop)...
+
+Move 2: BassDrop dropped Y in column 4.
+    0 1 2 3 4 5 6
+  +---------------+
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . R Y . . |
+  +---------------+
+>>> Your Turn! Choose a column (0-6), or q to quit: 3
+
+Move 3: You dropped R in column 3.
+    0 1 2 3 4 5 6
+  +---------------+
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . R . . . |
+  | . . . R Y . . |
+  +---------------+
+Waiting for Player 2 (BassDrop)...
+
+Move 4: BassDrop dropped Y in column 4.
+    0 1 2 3 4 5 6
+  +---------------+
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . R Y . . |
+  | . . . R Y . . |
+  +---------------+
+>>> Your Turn! Choose a column (0-6), or q to quit: 9
+[server] COLUMN_OUT_OF_RANGE: Column 9 is not 0-6
+3
+
+Move 5: You dropped R in column 3.
+    0 1 2 3 4 5 6
+  +---------------+
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . R . . . |
+  | . . . R Y . . |
+  | . . . R Y . . |
+  +---------------+
+Waiting for Player 2 (BassDrop)...
+
+Move 6: BassDrop dropped Y in column 5.
+    0 1 2 3 4 5 6
+  +---------------+
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . R . . . |
+  | . . . R Y . . |
+  | . . . R Y Y . |
+  +---------------+
+>>> Your Turn! Choose a column (0-6), or q to quit: 3
+
+    0 1 2 3 4 5 6
+  +---------------+
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . R . . . |
+  | . . . R . . . |
+  | . . . R Y . . |
+  | . . . R Y Y . |
+  +---------------+
+*** You win (WIN: four in a row). ***
+Winning cells (row,col): (2,3) (3,3) (4,3) (5,3)
+----------------------------------------
+  SCORE  PowderDay: 1  |  BassDrop: 0
+----------------------------------------
+
+========================================
+  ROUND 2: PowderDay vs BassDrop
+  You are PLAYER_1 (R). PLAYER_1 goes first.
+========================================
+    0 1 2 3 4 5 6
+  +---------------+
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  +---------------+
+>>> Your Turn! Choose a column (0-6), or q to quit: 2
+
+Move 1: You dropped R in column 2.
+    0 1 2 3 4 5 6
+  +---------------+
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . R . . . . |
+  +---------------+
+Waiting for Player 2 (BassDrop)...
+
+    0 1 2 3 4 5 6
+  +---------------+
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . R . . . . |
+  +---------------+
+*** You win (FORFEIT: opponent quit). ***
+----------------------------------------
+  SCORE  PowderDay: 2  |  BassDrop: 0
+----------------------------------------
+
+Connected as PowderDay. Opponent left. Waiting for a new opponent...
+Waiting for Player 2... (type q to quit)
+q
+Leaving the game...
+Goodbye!
+```
+
+## Client 2 (BassDrop)
+
+```text
+$ python3 client.py -i localhost -p 8080
+Resolved localhost -> 127.0.0.1
+Enter your player name: PowderDay
+Connected to 127.0.0.1:8080
+[server] NAME_TAKEN: Alias 'PowderDay' is already in use
+Choose a different name: BassDrop
+
+========================================
+  ROUND 1: BassDrop vs PowderDay
+  You are PLAYER_2 (Y). PLAYER_1 goes first.
+========================================
+    0 1 2 3 4 5 6
+  +---------------+
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  +---------------+
+Waiting for Player 1 (PowderDay)...
+4
+[server] OUT_OF_TURN: It is PLAYER_1's turn
+
+Move 1: PowderDay dropped R in column 3.
+    0 1 2 3 4 5 6
+  +---------------+
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . R . . . |
+  +---------------+
+>>> Your Turn! Choose a column (0-6), or q to quit: 4
+
+Move 2: You dropped Y in column 4.
+    0 1 2 3 4 5 6
+  +---------------+
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . R Y . . |
+  +---------------+
+Waiting for Player 1 (PowderDay)...
+
+Move 3: PowderDay dropped R in column 3.
+    0 1 2 3 4 5 6
+  +---------------+
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . R . . . |
+  | . . . R Y . . |
+  +---------------+
+>>> Your Turn! Choose a column (0-6), or q to quit: 4
+
+Move 4: You dropped Y in column 4.
+    0 1 2 3 4 5 6
+  +---------------+
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . R Y . . |
+  | . . . R Y . . |
+  +---------------+
+Waiting for Player 1 (PowderDay)...
+
+Move 5: PowderDay dropped R in column 3.
+    0 1 2 3 4 5 6
+  +---------------+
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . R . . . |
+  | . . . R Y . . |
+  | . . . R Y . . |
+  +---------------+
+>>> Your Turn! Choose a column (0-6), or q to quit: 5
+
+Move 6: You dropped Y in column 5.
+    0 1 2 3 4 5 6
+  +---------------+
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . R . . . |
+  | . . . R Y . . |
+  | . . . R Y Y . |
+  +---------------+
+Waiting for Player 1 (PowderDay)...
+
+    0 1 2 3 4 5 6
+  +---------------+
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . R . . . |
+  | . . . R . . . |
+  | . . . R Y . . |
+  | . . . R Y Y . |
+  +---------------+
+*** PowderDay wins (WIN: four in a row). ***
+Winning cells (row,col): (2,3) (3,3) (4,3) (5,3)
+----------------------------------------
+  SCORE  BassDrop: 0  |  PowderDay: 1
+----------------------------------------
+
+========================================
+  ROUND 2: BassDrop vs PowderDay
+  You are PLAYER_2 (Y). PLAYER_1 goes first.
+========================================
+    0 1 2 3 4 5 6
+  +---------------+
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  +---------------+
+Waiting for Player 1 (PowderDay)...
+
+Move 1: PowderDay dropped R in column 2.
+    0 1 2 3 4 5 6
+  +---------------+
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . . . . . . |
+  | . . R . . . . |
+  +---------------+
+>>> Your Turn! Choose a column (0-6), or q to quit: q
+Leaving the game...
+Goodbye!
+```
+
+## Command line and DNS checks
+
+```text
+$ python3 server.py -h
+usage: server.py [-h] -p PORT
+
+Connect Four server.
+
+options:
+  -h, --help       show this help message and exit
+  -p, --port PORT  port to listen on (1024-65535), binds to 0.0.0.0
+
+example: python3 server.py -p 8080
+(exit code 0)
+
+$ python3 client.py -h
+usage: client.py [-h] -i HOSTNAME -p PORT [-n NAME]
+
+Connect Four client.
+
+options:
+  -h, --help   show this help message and exit
+  -i HOSTNAME  server hostname (looked up with DNS) or IP
+  -p PORT      server port (1024-65535)
+  -n NAME      your player name (optional, asks if missing)
+
+examples:
+  python3 client.py -i server.kuykendall.edu -p 8080
+  python3 client.py -i localhost -p 8080 -n PowderDay
+(exit code 0)
+
+$ python3 server.py
+usage: server.py [-h] -p PORT
+server.py: error: the following arguments are required: -p/--port
+(exit code 2)
+
+$ python3 server.py -p 80
+usage: server.py [-h] -p PORT
+server.py: error: argument -p/--port: 80 is out of range (use 1024-65535)
+(exit code 2)
+
+$ python3 client.py -i localhost -p abc
+usage: client.py [-h] -i HOSTNAME -p PORT [-n NAME]
+client.py: error: argument -p: 'abc' is not a number (use 1024-65535)
+(exit code 2)
+
+$ python3 client.py -i server.nosuchname.invalid -p 8080
+[ERROR] Unable to resolve DNS hostname 'server.nosuchname.invalid'.
+Please check your Cisco router DNS configuration ('ip dns server' / 'ip host') or verify domain spelling.
+        ([Errno -2] Name or service not known)
+(exit code 1)
+
+$ python3 client.py -i localhost -p 50999 -n Test
+Resolved localhost -> 127.0.0.1
+[ERROR] Connection refused by 127.0.0.1:50999. Is the server running?
+(exit code 1)
+
+```

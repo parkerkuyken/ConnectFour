@@ -1,0 +1,64 @@
+
+enable
+configure terminal
+hostname R1
+ip routing
+
+! --- interfaces ---
+interface GigabitEthernet0/0
+ description To External Connector (NAT)
+ ip address dhcp
+ ip nat outside
+ no shutdown
+ exit
+
+interface GigabitEthernet0/1
+ description Subnet A - pk-Client1
+ ip address 192.168.10.1 255.255.255.0
+ ip nat inside
+ no shutdown
+ exit
+
+interface GigabitEthernet0/2
+ description Subnet B - pk-Client2
+ ip address 192.168.11.1 255.255.255.0
+ ip nat inside
+ no shutdown
+ exit
+
+interface GigabitEthernet0/3
+ description Subnet C - pk-Server
+ ip address 192.168.20.1 255.255.255.0
+ ip nat inside
+ no shutdown
+ exit
+
+! --- DHCP ---
+ip dhcp excluded-address 192.168.10.1
+ip dhcp excluded-address 192.168.11.1
+
+ip dhcp pool CLIENT1_POOL
+ network 192.168.10.0 255.255.255.0
+ default-router 192.168.10.1
+ dns-server 192.168.10.1
+ exit
+
+ip dhcp pool CLIENT2_POOL
+ network 192.168.11.0 255.255.255.0
+ default-router 192.168.11.1
+ dns-server 192.168.11.1
+ exit
+
+! --- DNS ---
+ip domain lookup
+ip dns server
+ip host server.kuykendall.edu 192.168.20.100
+
+! --- NAT overload so the nodes can reach the internet (apk, git) ---
+access-list 1 permit 192.168.10.0 0.0.0.255
+access-list 1 permit 192.168.11.0 0.0.0.255
+access-list 1 permit 192.168.20.0 0.0.0.255
+ip nat inside source list 1 interface GigabitEthernet0/0 overload
+
+end
+write memory
